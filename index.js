@@ -265,7 +265,46 @@ app.put('/customers/:id', async (req, res) => {
 })
 
 // Rentals Routes
+app.get('/rentals', async (req, res) => {
 
+    try{
+        const { customerId } = req.query;
+        const { gameId } = req.query;
+
+        if(customerId && gameId){
+            const promise = await connection.query( `
+                SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
+                jsonb_build_object('id', games.id, 'name', games.name, 'categoryId', games."categoryId", 'categoryName', categories.name) AS game
+                    FROM rentals
+                        JOIN customers ON rentals."customerId" = customers.id
+                        JOIN games ON rentals."gameId" = games.id
+                        JOIN categories ON categories.id = games."categoryId" WHERE rentals."customerId" = $1 AND rentals."gameId" = $2`, [customerId, gameId])
+
+            return res.send(promise.rows)
+        }
+        else if(customerId){
+            const promise = await connection.query(`SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
+                jsonb_build_object('id', games.id, 'name', games.name, 'categoryId', games."categoryId", 'categoryName', categories.name) AS game
+                    FROM rentals
+                        JOIN customers ON rentals."customerId" = customers.id
+                        JOIN games ON rentals."gameId" = games.id
+                        JOIN categories ON categories.id = games."categoryId" WHERE rentals."customerId" = $1`, [customerId])
+            return res.send(promise.rows);
+        }
+
+        const promise = await connection.query(`SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
+                jsonb_build_object('id', games.id, 'name', games.name, 'categoryId', games."categoryId", 'categoryName', categories.name) AS game
+                    FROM rentals
+                        JOIN customers ON rentals."customerId" = customers.id
+                        JOIN games ON rentals."gameId" = games.id
+                        JOIN categories ON categories.id = games."categoryId" WHERE rentals."gameId" = $1`, [gameId])
+            return res.send(promise.rows);
+        }
+        catch (error){
+
+            return res.sendStatus(500);
+        }
+})
 app.post('/rentals', async (req, res) => {
 
     const {
@@ -275,7 +314,7 @@ app.post('/rentals', async (req, res) => {
     } = req.body
 
     const rentDate = dayjs().format().substring(0, 10);
-    const returnDate = null; // troca pra uma data quando já devolvido
+    const returnDate = null; 
     const delayFee = null;
 
     try{
@@ -370,6 +409,5 @@ app.delete('/rentals/:id', async (req, res) => {
         return res.sendStatus(500);
     }
 })
-app.listen(4000, () => {
-    console.log('Server listening on port 4000.');
-});
+
+app.listen(4000, () => {});
