@@ -37,3 +37,41 @@ app.get('/categories', async (req, res) => {
         res.sendStatus(500);
     }
 })
+
+app.post('/categories', async (req, res) => {
+    
+    const {name} = req.body;
+
+    if(!name.length){
+
+        return res.sendStatus(400);
+    }
+    
+    try{
+        const namesCategories = await connection.query(`SELECT name FROM categories;`);
+
+        if(!namesCategories.rows.length){
+
+            await connection.query('INSERT INTO categories (name) VALUES ($1);', [name]);
+
+            return res.sendStatus(201);
+        }
+        else{
+
+            if(namesCategories.rows.filter((row) => row.name === name).length){
+
+                return res.sendStatus(409);
+            }
+            else{
+                
+                await connection.query('INSERT INTO categories (name) VALUES ($1);', [name]);
+
+                return res.sendStatus(201); 
+            }
+        }
+    }   
+    catch (error){
+
+        res.sendStatus(500);
+    }
+})
