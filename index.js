@@ -272,7 +272,7 @@ app.get('/rentals', async (req, res) => {
         const { gameId } = req.query;
 
         if(customerId && gameId){
-            const promise = await connection.query( `
+            const listRentalsCG = await connection.query( `
                 SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
                 jsonb_build_object('id', games.id, 'name', games.name, 'categoryId', games."categoryId", 'categoryName', categories.name) AS game
                     FROM rentals
@@ -280,30 +280,31 @@ app.get('/rentals', async (req, res) => {
                         JOIN games ON rentals."gameId" = games.id
                         JOIN categories ON categories.id = games."categoryId" WHERE rentals."customerId" = $1 AND rentals."gameId" = $2`, [customerId, gameId])
 
-            return res.send(promise.rows)
+            return res.send(listRentalsCG.rows)
         }
         else if(customerId){
-            const promise = await connection.query(`SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
+            const listRentalsC = await connection.query(`SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
                 jsonb_build_object('id', games.id, 'name', games.name, 'categoryId', games."categoryId", 'categoryName', categories.name) AS game
                     FROM rentals
                         JOIN customers ON rentals."customerId" = customers.id
                         JOIN games ON rentals."gameId" = games.id
                         JOIN categories ON categories.id = games."categoryId" WHERE rentals."customerId" = $1`, [customerId])
-            return res.send(promise.rows);
+            return res.send(listRentalsC.rows);
         }
-
-        const promise = await connection.query(`SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
+        else if(gameId){
+            const listRentalsG = await connection.query(`SELECT rentals.*, jsonb_build_object('id', customers.id, 'name', customers.name) AS customer,
                 jsonb_build_object('id', games.id, 'name', games.name, 'categoryId', games."categoryId", 'categoryName', categories.name) AS game
                     FROM rentals
                         JOIN customers ON rentals."customerId" = customers.id
                         JOIN games ON rentals."gameId" = games.id
                         JOIN categories ON categories.id = games."categoryId" WHERE rentals."gameId" = $1`, [gameId])
-            return res.send(promise.rows);
+            return res.send(listRentalsG.rows);
         }
-        catch (error){
+    } 
+    catch (error){
 
-            return res.sendStatus(500);
-        }
+        return res.sendStatus(500);
+    }
 })
 app.post('/rentals', async (req, res) => {
 
