@@ -75,3 +75,64 @@ app.post('/categories', async (req, res) => {
         res.sendStatus(500);
     }
 })
+
+// Games Routes 
+
+app.get('/games', async (req, res) => {
+
+    const{ name } = req.query;
+
+    try{
+        if(name){
+
+            const searchNameGameMatch = await connection.query('SELECT * FROM games WHERE name ILIKE $1;', [`${name}%`]);
+
+            return res.send(searchNameGameMatch.rows);
+        }
+
+        const games = await connection.query(`SELECT * FROM games;`);
+
+        return res.send(games.rows);
+    }
+    catch (error) {
+        
+        res.sendStatus(500);
+    }
+})
+
+app.post('/games', async (req, res) => {
+
+    const{
+        name,
+        image,
+        stockTotal,
+        categoryId,
+        pricePerDay
+    } = req.body;
+
+    try {
+        const categoriesCheckId = await connection.query('SELECT id FROM categories WHERE $1;', [categoryId]);
+
+        if(!categoriesCheckId.rows.length){
+
+            return res.sendStatus(400);
+        }
+
+        const gamesCheckName = await connection.query('SELECT * FROM games WHERE name=$2;', [name])
+
+        if(gamesCheckName.rows.length){
+
+            return res.sendStatus(409);
+        }
+
+        const inserirGames = await connection.query(`INSERT INTO games (name, image,"stockTotal", "categoryId", "pricePerDay") VALUES ('${name}','${image}', '${stockTotal}', '${categoryId}', '${pricePerDay}' );`);
+
+        return res.sendStatus(201); 
+    }
+    catch (error){
+
+        return res.sendStatus(500);
+    }
+
+})
+
